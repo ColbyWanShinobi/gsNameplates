@@ -136,7 +136,8 @@ hooksecurefunc("CompactUnitFrame_UpdateHealth", function(frame)
 			frame.health:SetPoint("CENTER", frame.healthBar)
 			frame.health.text:SetVertexColor(1, 1, 1)
 		end
-		frame.health.text:SetFont("FONTS\\ARIALN.TTF", 10, "OUTLINE")
+		--frame.health.text:SetFont("FONTS\\ARIALN.TTF", 10, "OUTLINE")
+		frame.health.text:SetFont("Interface\\Addons\\gsNameplates\\media\\LiberationSans-Regular.ttf", 10, "OUTLINE")
 		frame.health.text:SetText(formatNumbers(UnitHealth(frame.unit)) .. " (" .. healthPercentage .. "%)")
 		frame.health.text:Show()
 	end
@@ -159,7 +160,7 @@ end)
 
 hooksecurefunc("CompactUnitFrame_UpdateName", function(frame)
 	if frame.name then
-		frame.name:SetFont("FONTS\\ARIALN.TTF", 12, "OUTLINE")
+		frame.name:SetFont("Interface\\Addons\\gsNameplates\\media\\LiberationSans-Regular.ttf", 12, "OUTLINE")
 	end
 end)
 
@@ -173,7 +174,7 @@ hooksecurefunc("ClassNameplateManaBar_OnUpdate", function(frame)
 		frame.powerNumbers.text:SetAllPoints(true)
 		frame.powerNumbers:SetFrameStrata("HIGH")
 		frame.powerNumbers:SetPoint("CENTER", frame)
-		frame.powerNumbers.text:SetFont("FONTS\\ARIALN.TTF", 10, "OUTLINE")
+		frame.powerNumbers.text:SetFont("Interface\\Addons\\gsNameplates\\media\\LiberationSans-Regular.ttf", 10, "OUTLINE")
 		frame.powerNumbers.text:SetVertexColor(1, 1, 1)
 	else
 		if InterfaceOptionsNamesPanelUnitNameplatesMakeLarger:GetValue() == "1" then -- If 'Larger Nameplates' option is enabled.
@@ -191,7 +192,7 @@ updateCastbar:RegisterEvent("NAME_PLATE_UNIT_REMOVED")
 updateCastbar:SetScript("OnEvent", function(self, event, unit)
 	local p = C_NamePlate.GetNamePlateForUnit(unit).UnitFrame
 	if event == "NAME_PLATE_UNIT_ADDED" then
-			p.castBar.Text:SetFont("FONTS\\ARIALN.TTF", 10, "OUTLINE")
+			p.castBar.Text:SetFont("Interface\\Addons\\gsNameplates\\media\\LiberationSans-Regular.ttf", 10, "OUTLINE")
 	elseif event == "NAME_PLATE_UNIT_REMOVED" then
 		p.healthBar:ClearAllPoints()
 	end

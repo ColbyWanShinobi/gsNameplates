@@ -1,5 +1,5 @@
 ## Interface: 90001
-## Title: |cffeda55fgs|rNameplates (gameshaman.com)
+## Title: gsNameplates (|cffeda55fgameshaman.com|r)
 ## Notes: Tweaks to the Player Resource Display
 ## Author: ColbyWanShinobi
 ## Version: 1.0
