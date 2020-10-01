@@ -44,6 +44,19 @@ function loadOptionPanel()
 		gsNameplatesConfig.prdClickThrough = prdClickThroughCheckbox:GetChecked();
 		C_NamePlate.SetNamePlateSelfClickThrough(gsNameplatesConfig.prdClickThrough);
 		print("[gsNP] PRD Clickthtough set to ", C_NamePlate.GetNamePlateSelfClickThrough());
+	end)
+	
+	local prdAlwaysShowCheckbox = CreateFrame("CheckButton", "prdAlwaysShowCheckbox", gsNP_Options, "ChatConfigCheckButtonTemplate");
+	prdAlwaysShowCheckbox:SetPoint("TOPLEFT", 15, -60);
+	prdAlwaysShowCheckbox:SetWidth(30);
+	prdAlwaysShowCheckbox:SetHeight(30);
+	_G[prdAlwaysShowCheckbox:GetName().."Text"]:SetText("Always Show PRD");
+	prdAlwaysShowCheckbox.tooltip = "Always show PRD even when not in combat";
+	prdAlwaysShowCheckbox:SetChecked(gsNameplatesConfig.prdAlwaysShow);
+	prdAlwaysShowCheckbox:SetScript("OnClick", function()
+		gsNameplatesConfig.prdAlwaysShow = prdAlwaysShowCheckbox:GetChecked();
+		SetCVar("nameplatePersonalShowAlways", gsNameplatesConfig.prdAlwaysShow)
+		print("[gsNP] PRD Always Visible set to ", GetCVar("nameplatePersonalShowAlways"));
   end)
   
 
@@ -226,8 +239,10 @@ function events:ADDON_LOADED(addonName)
 			print("Initializing gsNameplates...");
 			--gsNameplates:initializeSaveFile()
 			local prdCT = C_NamePlate.GetNamePlateSelfClickThrough();
+			local prdAlways = GetCVar("nameplatePersonalShowAlways");
 			gsNameplatesConfig = {
 				prdClickThrough = prdCT,
+				prdAlwaysShow = prdAlways,
 			}
 		end
 
@@ -235,7 +250,6 @@ function events:ADDON_LOADED(addonName)
 		C_NamePlate.SetNamePlateSelfClickThrough(gsNameplatesConfig.prdClickThrough);
 
     loadOptionPanel();
-    print("C_NamePlate.GetNamePlateSelfClickThrough: ", C_NamePlate.GetNamePlateSelfClickThrough());
   end
 end
 
