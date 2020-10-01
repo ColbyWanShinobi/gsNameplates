@@ -96,14 +96,28 @@ local function round(number, decimals)
 	return math.floor(number * power) / power
 end
 
+local function add_commas(amount)
+  local formatted = amount
+  while true do  
+    formatted, k = string.gsub(formatted, "^(-?%d+)(%d%d%d)", '%1,%2')
+    if (k==0) then
+      break
+    end
+  end
+  return formatted
+end
+
+
 local function formatNumbers(amount)
 	local formatted = amount;
-	if amount >= 100000 and amount <= 1000000 then
+	if amount >= 10000 and amount <= 1000000 then
 		local k = round(amount / 1000, 2).."K";
 		formatted = k;
 	elseif amount > 1000000 then
 		local m = round(amount / 1000000, 2).."M";
 		formatted = m;
+	else
+		formatted = add_commas(amount) 
 	end
 	return formatted;
 end
@@ -128,47 +142,26 @@ hooksecurefunc("CompactUnitFrame_UpdateHealth", function(frame)
 	end
 end)
 
---[[hooksecurefunc("CompactUnitFrame_UpdatePower", function(frame)
-	--if frame.optionTable.colorNameBySelection and not frame:IsForbidden() then
-	if C_NamePlate.GetNamePlateForUnit(frame.unit) == C_NamePlate.GetNamePlateForUnit("player") then	
-	local powerPercentage = ceil((UnitPower(frame.displayedUnit) / UnitPowerMax(frame.displayedUnit) * 100));
-
-		if not frame.power then
-			frame.power = CreateFrame("Frame", nil, frame) -- Setting up custom power display frames.
-			frame.power:SetSize(170,16)
-			frame.power.text = frame.power.text or frame.power:CreateFontString(nil, "OVERLAY")
-			frame.power.text:SetAllPoints(true)
-			frame.power:SetFrameStrata("HIGH")
-			frame.power:SetPoint("CENTER", frame.powerBar)
-			frame.power.text:SetVertexColor(1, 1, 1)
+--current target is larger and full alpha
+local targetFrame = CreateFrame("frame")
+targetFrame:RegisterEvent("PLAYER_TARGET_CHANGED")
+targetFrame:SetScript("OnEvent", function(self, event)
+	for _, frame in pairs(C_NamePlate.GetNamePlates()) do
+		if frame == C_NamePlate.GetNamePlateForUnit("target") or not UnitExists("target") or frame == C_NamePlate.GetNamePlateForUnit("player") then
+			frame.UnitFrame:SetAlpha(1)
+			frame.UnitFrame:SetScale(1)
+		else
+			frame.UnitFrame:SetAlpha(0.35)
+			frame.UnitFrame:SetScale(0.95)
 		end
-		frame.power.text:SetFont("FONTS\\ARIALN.TTF", 10, "OUTLINE")
-		frame.power.text:SetText(powerPercentage .. "%")
-		frame.power.text:Show()
 	end
-end)]]
+end)
 
 hooksecurefunc("CompactUnitFrame_UpdateName", function(frame)
 	if frame.name then
 		frame.name:SetFont("FONTS\\ARIALN.TTF", 12, "OUTLINE")
 	end
 end)
-
---[[hooksecurefunc("ClassNameplateManaBar_OnUpdate", function(frame)
-	local powerPercentage = ceil((UnitPower("player") / UnitPowerMax("player") * 100));
-	if not frame.powerNumbers then
-		frame.powerNumbers = CreateFrame("Frame", nil, frame) -- Setting up resource display frame.
-		frame.powerNumbers:SetSize(170,16)
-		frame.powerNumbers.text = frame.powerNumbers.text or frame.powerNumbers:CreateFontString(nil, "OVERLAY")
-		frame.powerNumbers.text:SetAllPoints(true)
-		frame.powerNumbers:SetFrameStrata("HIGH")
-		frame.powerNumbers:SetPoint("CENTER", frame.powerbar)
-		frame.powerNumbers.text:SetVertexColor(1, 1, 1)
-	end
-	frame.powerNumbers.text:SetFont("ARIALN.TTF", 10, "OUTLINE")
-	frame.powerNumbers.text:SetText(powerPercentage .. "%")
-	frame.powerNumbers.text:Show()
-end)]]
 
 hooksecurefunc("ClassNameplateManaBar_OnUpdate", function(frame)
 	local powerPercentage = ceil((UnitPower("player") / UnitPowerMax("player") * 100)) -- Calculating a percentage value for primary resource (Rage/Mana/Focus/etc.)
@@ -198,20 +191,7 @@ updateCastbar:RegisterEvent("NAME_PLATE_UNIT_REMOVED")
 updateCastbar:SetScript("OnEvent", function(self, event, unit)
 	local p = C_NamePlate.GetNamePlateForUnit(unit).UnitFrame
 	if event == "NAME_PLATE_UNIT_ADDED" then
-		--if UnitGUID(unit) ~= UnitGUID("player") then
-			--if ImprovedNameplatesDB.showLevels then
-				--if InterfaceOptionsNamesPanelUnitNameplatesMakeLarger:GetValue() == "1" then
-					--offset(p.name, 15, 6)
-					--offset(p.healthBar, -15, 3)
-				--elseif InterfaceOptionsNamesPanelUnitNameplatesMakeLarger:GetValue() == "0" then
-					--offset(p.name, 9, 6)
-					--offset(p.healthBar, -9, 3)
-				--end
-			--end
-		--else -- Thanks Blizzard...
-			--local fontName, fontHeight, fontFlags = p.castBar.Text:GetFont()
 			p.castBar.Text:SetFont("FONTS\\ARIALN.TTF", 10, "OUTLINE")
-		--end
 	elseif event == "NAME_PLATE_UNIT_REMOVED" then
 		p.healthBar:ClearAllPoints()
 	end
