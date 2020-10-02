@@ -46,19 +46,28 @@ function loadOptionPanel()
 		print("[gsNP] PRD Clickthtough set to ", C_NamePlate.GetNamePlateSelfClickThrough());
 	end)
 	
-	local prdAlwaysShowCheckbox = CreateFrame("CheckButton", "prdAlwaysShowCheckbox", gsNP_Options, "ChatConfigCheckButtonTemplate");
-	prdAlwaysShowCheckbox:SetPoint("TOPLEFT", 15, -60);
-	prdAlwaysShowCheckbox:SetWidth(30);
-	prdAlwaysShowCheckbox:SetHeight(30);
-	_G[prdAlwaysShowCheckbox:GetName().."Text"]:SetText("Always Show PRD");
-	prdAlwaysShowCheckbox.tooltip = "Always show PRD even when not in combat";
-	prdAlwaysShowCheckbox:SetChecked(gsNameplatesConfig.prdAlwaysShow);
-	prdAlwaysShowCheckbox:SetScript("OnClick", function()
-		gsNameplatesConfig.prdAlwaysShow = prdAlwaysShowCheckbox:GetChecked();
-		SetCVar("nameplatePersonalShowAlways", gsNameplatesConfig.prdAlwaysShow)
-		print("[gsNP] PRD Always Visible set to ", GetCVar("nameplatePersonalShowAlways"));
-  end)
-  
+	prdNameplateMaxDistance = CreateFrame("Slider", "prdNameplateMaxDistance", gsNP_Options, "OptionsSliderTemplate")
+	prdNameplateMaxDistance:ClearAllPoints()
+	prdNameplateMaxDistance:SetPoint("TOPLEFT", 15, -100)
+	prdNameplateMaxDistance:SetMinMaxValues(5, 60)
+	prdNameplateMaxDistance:SetValue(gsNameplatesConfig.prdNameplateMaxDistance)
+	prdNameplateMaxDistance:SetValueStep(5)
+	prdNameplateMaxDistance:SetObeyStepOnDrag(true)
+	prdNameplateMaxDistance:SetOrientation("HORIZONTAL")
+	_G[prdNameplateMaxDistance:GetName() .. "Low"]:SetText("5")
+	_G[prdNameplateMaxDistance:GetName() .. "High"]:SetText("60")
+	_G[prdNameplateMaxDistance:GetName() .. "Text"]:SetText("Nameplate Max Distance")
+	prdNameplateMaxDistance:SetScript("OnValueChanged", function() 
+		gsNameplatesConfig.prdNameplateMaxDistance = prdNameplateMaxDistance:GetValue()
+		SetCVar('nameplateMaxDistance', gsNameplatesConfig.prdNameplateMaxDistance)
+		prdNameplateMaxDistanceLabel:SetText("Distance: " .. prdNameplateMaxDistance:GetValue())
+	end)
+
+	local prdNameplateMaxDistanceLabel = gsNP_Options:CreateFontString("prdNameplateMaxDistanceLabel", "ARTWORK", "GameFontHighlightSmall")
+	prdNameplateMaxDistanceLabel:SetPoint("LEFT", prdNameplateMaxDistance, "RIGHT", 20, 0)
+	prdNameplateMaxDistanceLabel:SetText("Distance: " .. gsNameplatesConfig.prdNameplateMaxDistance)
+	
+
 
   ---------------------------------------
   
@@ -156,21 +165,6 @@ hooksecurefunc("CompactUnitFrame_UpdateHealth", function(frame)
 	end
 end)
 
---current target is larger and full alpha
-local targetFrame = CreateFrame("frame")
-targetFrame:RegisterEvent("PLAYER_TARGET_CHANGED")
-targetFrame:SetScript("OnEvent", function(self, event)
-	for _, frame in pairs(C_NamePlate.GetNamePlates()) do
-		if frame == C_NamePlate.GetNamePlateForUnit("target") or not UnitExists("target") or frame == C_NamePlate.GetNamePlateForUnit("player") then
-			frame.UnitFrame:SetAlpha(1)
-			frame.UnitFrame:SetScale(1)
-		else
-			frame.UnitFrame:SetAlpha(0.35)
-			frame.UnitFrame:SetScale(0.95)
-		end
-	end
-end)
-
 hooksecurefunc("CompactUnitFrame_UpdateName", function(frame)
 	if frame.name then
 		frame.name:SetFont("Interface\\Addons\\gsNameplates\\media\\LiberationSans-Regular.ttf", 12, "OUTLINE")
@@ -199,17 +193,40 @@ hooksecurefunc("ClassNameplateManaBar_OnUpdate", function(frame)
 	end
 end)
 
-local updateCastbar = CreateFrame("Frame")
-updateCastbar:RegisterEvent("NAME_PLATE_UNIT_ADDED")
-updateCastbar:RegisterEvent("NAME_PLATE_UNIT_REMOVED")
-updateCastbar:SetScript("OnEvent", function(self, event, unit)
-	local p = C_NamePlate.GetNamePlateForUnit(unit).UnitFrame
-	if event == "NAME_PLATE_UNIT_ADDED" then
-			p.castBar.Text:SetFont("Interface\\Addons\\gsNameplates\\media\\LiberationSans-Regular.ttf", 10, "OUTLINE")
-	elseif event == "NAME_PLATE_UNIT_REMOVED" then
-		p.healthBar:ClearAllPoints()
+function gsNameplates.setCastBarStyle(nameplate)
+	if nameplate then
+		nameplate.UnitFrame.castBar.Text:SetFont("Interface\\Addons\\gsNameplates\\media\\LiberationSans-Regular.ttf", 10, "OUTLINE");
 	end
-end)
+end
+
+function gsNameplates.setNameplateAlpha(nameplate)
+	if nameplate then
+		--if frame == C_NamePlate.GetNamePlateForUnit("target") or not UnitExists("target") or frame == C_NamePlate.GetNamePlateForUnit("player") then
+		local playerHasAggro = UnitThreatSituation("player", nameplate.UnitFrame.unit);
+		if UnitAffectingCombat(nameplate.UnitFrame.unit) and UnitCanAttack("player", nameplate.UnitFrame.unit) and playerHasAggro then 
+			--Unit is in combat, the player can attack it, and it has aggro on the player
+			nameplate.UnitFrame:SetAlpha(1)
+			nameplate.UnitFrame:SetScale(1)
+		elseif UnitAffectingCombat(nameplate.UnitFrame.unit) and UnitCanAttack("player", nameplate.UnitFrame.unit) and not playerHasAggro then
+			--Unit is in combat, the player can attack it, but player has no aggro
+			nameplate.UnitFrame:SetAlpha(0.50)
+			nameplate.UnitFrame:SetScale(0.95)
+		elseif nameplate == C_NamePlate.GetNamePlateForUnit("target") then
+			nameplate.UnitFrame:SetAlpha(1)
+			nameplate.UnitFrame:SetScale(1)
+		elseif nameplate == C_NamePlate.GetNamePlateForUnit("player") then
+			--Don't dim the PRD
+			nameplate.UnitFrame:SetAlpha(1)
+			nameplate.UnitFrame:SetScale(1)
+		elseif UnitIsPlayer(nameplate.UnitFrame.unit) then
+			nameplate.UnitFrame:SetAlpha(0.50)
+			nameplate.UnitFrame:SetScale(1)
+		else
+			nameplate.UnitFrame:SetAlpha(0.35)
+			nameplate.UnitFrame:SetScale(0.95)
+		end
+	end
+end
 
 
 
@@ -240,17 +257,40 @@ function events:ADDON_LOADED(addonName)
 			--gsNameplates:initializeSaveFile()
 			local prdCT = C_NamePlate.GetNamePlateSelfClickThrough();
 			local prdAlways = GetCVar("nameplatePersonalShowAlways");
+			local prdNPMaxDist = GetCVar("nameplateMaxDistance");
 			gsNameplatesConfig = {
 				prdClickThrough = prdCT,
 				prdAlwaysShow = prdAlways,
+				prdNameplateMaxDistance = prdNPMaxDist,
 			}
 		end
 
 		--Set CVAR values on load from saved preferences
 		C_NamePlate.SetNamePlateSelfClickThrough(gsNameplatesConfig.prdClickThrough);
-
-    loadOptionPanel();
+		SetCVar('nameplateMaxDistance', gsNameplatesConfig.prdNameplateMaxDistance)
+		--defaults
+		--print(GetCVar('nameplateMaxDistance'),GetCVar('nameplateTargetBehindMaxDistance'))
+		--SetCVar('nameplateTargetBehindMaxDistance', 20)
+		loadOptionPanel();
   end
+end
+
+function events:PLAYER_TARGET_CHANGED()
+	--gsNameplates.dimNameplates();
+	for _, nameplate in pairs(C_NamePlate.GetNamePlates()) do
+		gsNameplates.setNameplateAlpha(nameplate);
+	end
+end
+
+function events:NAME_PLATE_UNIT_ADDED(unitId)
+	local nameplate = C_NamePlate.GetNamePlateForUnit(unitId);
+	gsNameplates.setNameplateAlpha(nameplate);
+	gsNameplates.setCastBarStyle(nameplate);
+end
+
+function events:NAME_PLATE_UNIT_REMOVED(unitId)
+	local nameplate = C_NamePlate.GetNamePlateForUnit(unitId);
+		nameplate.UnitFrame.castBar:ClearAllPoints();
 end
 
 -- ................................................................
