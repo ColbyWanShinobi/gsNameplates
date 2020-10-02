@@ -175,7 +175,16 @@ end)
 
 hooksecurefunc("CompactUnitFrame_UpdateName", function(frame)
 	if frame.name then
-		frame.name:SetFont("Interface\\Addons\\gsNameplates\\media\\LiberationSans-Regular.ttf", 12, "OUTLINE")
+		local level = UnitLevel(frame.unit) or "";
+		if level == -1 then
+			local playerLevel = UnitLevel("player");
+			local bossLevel = playerLevel + 3;
+			level = bossLevel;
+		end
+		--local difficultyColor = GetQuestDifficultyColor(level);
+		local name = GetUnitName(frame.unit) or "";
+		frame.name:SetText("["..level.."] "..name);
+		frame.name:SetFont("Interface\\Addons\\gsNameplates\\media\\LiberationSans-Regular.ttf", 12, "OUTLINE");
 	end
 end)
 
@@ -230,11 +239,18 @@ function gsNameplates.setHealthBarTexture(nameplate)
 	nameplate.UnitFrame.healthBar:SetStatusBarTexture("Interface\\Addons\\gsNameplates\\media\\gsBarTexture")
 end
 
+function gsNameplates:printTable(table)
+	print("------")
+	for k,v in pairs(table) do
+		print("--")
+		print(k,v, "[Type: "..type(v).."]")
+		print("--")
+	end
+	print("------")
+end
+
 function gsNameplates.setNameplateAlpha(nameplate)
 	if nameplate then
-		
-		
-
 		--if frame == C_NamePlate.GetNamePlateForUnit("target") or not UnitExists("target") or frame == C_NamePlate.GetNamePlateForUnit("player") then
 		local playerHasAggro = UnitThreatSituation("player", nameplate.UnitFrame.unit);
 		if UnitAffectingCombat(nameplate.UnitFrame.unit) and UnitCanAttack("player", nameplate.UnitFrame.unit) and playerHasAggro then 
@@ -262,13 +278,8 @@ function gsNameplates.setNameplateAlpha(nameplate)
 	end
 end
 
-
-
 -- *****************************************************************
 -- *****************************************************************
-
-
-
 function gsNameplates:init()
   self:SetScript("OnEvent", function(frame, event, ...)
     local handler = events[event];
@@ -310,7 +321,6 @@ function events:ADDON_LOADED(addonName)
 end
 
 function events:PLAYER_TARGET_CHANGED()
-	--gsNameplates.dimNameplates();
 	for _, nameplate in pairs(C_NamePlate.GetNamePlates()) do
 		gsNameplates.setNameplateAlpha(nameplate);
 	end
