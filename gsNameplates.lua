@@ -12,6 +12,13 @@ repo: https://github.com/ColbyWanShinobi/gsNameplates.git
 local gsNameplates = CreateFrame("Frame");
 local events = {};
 
+function printTable(table)
+	for objIndex, objInfo in ipairs(table) do
+    print("["..objIndex.."]");
+  end
+end
+
+
 function loadOptionPanel()
 	local gsNP_Options = CreateFrame("frame", "gsNameplates_Options");
 	gsNP_Options.name = "gsNameplates";
@@ -158,6 +165,7 @@ hooksecurefunc("CompactUnitFrame_UpdateHealth", function(frame)
 			frame.health:SetPoint("CENTER", frame.healthBar)
 			frame.health.text:SetVertexColor(1, 1, 1)
 		end
+
 		--frame.health.text:SetFont("FONTS\\ARIALN.TTF", 10, "OUTLINE")
 		frame.health.text:SetFont("Interface\\Addons\\gsNameplates\\media\\LiberationSans-Regular.ttf", 10, "OUTLINE")
 		frame.health.text:SetText(formatNumbers(UnitHealth(frame.unit)) .. " (" .. healthPercentage .. "%)")
@@ -174,6 +182,7 @@ end)
 hooksecurefunc("ClassNameplateManaBar_OnUpdate", function(frame)
 	local powerPercentage = ceil((UnitPower("player") / UnitPowerMax("player") * 100)) -- Calculating a percentage value for primary resource (Rage/Mana/Focus/etc.)
 
+	frame:SetStatusBarTexture("Interface\\Addons\\gsNameplates\\media\\gsBarTexture")
 	if not frame.powerNumbers then
 		frame.powerNumbers = CreateFrame("Frame", nil, frame) -- Setting up resource display frame.
 		frame.powerNumbers:SetSize(170,16)
@@ -193,14 +202,39 @@ hooksecurefunc("ClassNameplateManaBar_OnUpdate", function(frame)
 	end
 end)
 
+--Set bar texture for primary player unitframe
+hooksecurefunc("PlayerFrame_ToPlayerArt", function(frame)
+	frame.healthbar:SetStatusBarTexture("Interface\\Addons\\gsNameplates\\media\\gsBarTexture")
+end)
+
+hooksecurefunc("TargetFrame_OnUpdate", function(frame)
+	frame.healthbar:SetStatusBarTexture("Interface\\Addons\\gsNameplates\\media\\gsBarTexture")
+end)
+
 function gsNameplates.setCastBarStyle(nameplate)
 	if nameplate then
 		nameplate.UnitFrame.castBar.Text:SetFont("Interface\\Addons\\gsNameplates\\media\\LiberationSans-Regular.ttf", 10, "OUTLINE");
+		nameplate.UnitFrame.castBar:SetStatusBarTexture("Interface\\Addons\\gsNameplates\\media\\gsBarTexture")
 	end
+end
+
+function gsNameplates.setHealthbarClassColor(nameplate)
+	local r, g, b;
+	local localizedClass, englishClass = UnitClass(nameplate.UnitFrame.unit);
+	local classColor = RAID_CLASS_COLORS[englishClass];
+	r, g, b = classColor.r, classColor.g, classColor.b;
+	nameplate.UnitFrame.healthBar:SetStatusBarColor(r, g, b);
+end
+
+function gsNameplates.setHealthBarTexture(nameplate)
+	nameplate.UnitFrame.healthBar:SetStatusBarTexture("Interface\\Addons\\gsNameplates\\media\\gsBarTexture")
 end
 
 function gsNameplates.setNameplateAlpha(nameplate)
 	if nameplate then
+		
+		
+
 		--if frame == C_NamePlate.GetNamePlateForUnit("target") or not UnitExists("target") or frame == C_NamePlate.GetNamePlateForUnit("player") then
 		local playerHasAggro = UnitThreatSituation("player", nameplate.UnitFrame.unit);
 		if UnitAffectingCombat(nameplate.UnitFrame.unit) and UnitCanAttack("player", nameplate.UnitFrame.unit) and playerHasAggro then 
@@ -252,18 +286,18 @@ end
 function events:ADDON_LOADED(addonName)
   if (addonName == "gsNameplates") then
     print("gsNameplates [gsNP] by gameshaman.com - Addon Loaded");
-    if gsNameplatesConfig == nil then
-			print("Initializing gsNameplates...");
+    --if gsNameplatesConfig == nil then
+			--print("Initializing gsNameplates...");
 			--gsNameplates:initializeSaveFile()
-			local prdCT = C_NamePlate.GetNamePlateSelfClickThrough();
-			local prdAlways = GetCVar("nameplatePersonalShowAlways");
-			local prdNPMaxDist = GetCVar("nameplateMaxDistance");
+			local prdCT = C_NamePlate.GetNamePlateSelfClickThrough() or true;
+			local prdAlways = GetCVar("nameplatePersonalShowAlways") or true;
+			local prdNPMaxDist = GetCVar("nameplateMaxDistance") or 40;
 			gsNameplatesConfig = {
 				prdClickThrough = prdCT,
 				prdAlwaysShow = prdAlways,
 				prdNameplateMaxDistance = prdNPMaxDist,
 			}
-		end
+		--end
 
 		--Set CVAR values on load from saved preferences
 		C_NamePlate.SetNamePlateSelfClickThrough(gsNameplatesConfig.prdClickThrough);
@@ -284,6 +318,11 @@ end
 
 function events:NAME_PLATE_UNIT_ADDED(unitId)
 	local nameplate = C_NamePlate.GetNamePlateForUnit(unitId);
+	gsNameplates.setHealthBarTexture(nameplate)
+	if nameplate == C_NamePlate.GetNamePlateForUnit("player") then
+		--Set PRD healthbar to my class color
+		gsNameplates.setHealthbarClassColor(nameplate);
+	end
 	gsNameplates.setNameplateAlpha(nameplate);
 	gsNameplates.setCastBarStyle(nameplate);
 end
