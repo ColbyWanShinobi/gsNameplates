@@ -287,12 +287,6 @@ function events:NAME_PLATE_UNIT_ADDED(unitId)
 	gsNameplates.setNameplateAlpha(nameplate);
 	gsNameplates.setCastBarStyle(nameplate);
 end
-
-function events:NAME_PLATE_UNIT_REMOVED(unitId)
-	local nameplate = C_NamePlate.GetNamePlateForUnit(unitId);
-		nameplate.UnitFrame.castBar:ClearAllPoints();
-end
-
 -- ................................................................
   -- must be last line:
 	gsNameplates:init();
