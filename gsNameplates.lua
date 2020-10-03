@@ -175,15 +175,17 @@ end)
 
 hooksecurefunc("CompactUnitFrame_UpdateName", function(frame)
 	if frame.name then
-		local level = UnitLevel(frame.unit) or "";
-		if level == -1 then
-			local playerLevel = UnitLevel("player");
-			local bossLevel = playerLevel + 3;
-			level = bossLevel;
+		if not string.match(frame.unit, "raid%d+") then 
+			local level = UnitLevel(frame.unit) or "";
+			if level == -1 then
+				local playerLevel = UnitLevel("player");
+				local bossLevel = playerLevel + 3;
+				level = bossLevel;
+			end
+			--local difficultyColor = GetQuestDifficultyColor(level);
+			local name = GetUnitName(frame.unit) or "";
+			frame.name:SetText("["..level.."] "..name);
 		end
-		--local difficultyColor = GetQuestDifficultyColor(level);
-		local name = GetUnitName(frame.unit) or "";
-		frame.name:SetText("["..level.."] "..name);
 		frame.name:SetFont("Interface\\Addons\\gsNameplates\\media\\LiberationSans-Regular.ttf", 12, "OUTLINE");
 	end
 end)
