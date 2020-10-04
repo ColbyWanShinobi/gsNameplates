@@ -9,9 +9,10 @@ repo: https://github.com/ColbyWanShinobi/gsNameplates.git
 local gsNameplates = CreateFrame("Frame");
 local events = {};
 
-local barTexturePath = "Interface\\Addons\\gsNameplates\\media\\gsBarTexture";
-local fontPath = "Interface\\Addons\\gsNameplates\\media\\LiberationSans-Regular.ttf";
-local fontSize = 10;
+gsNameplates.barTexturePath = "Interface\\Addons\\gsNameplates\\media\\gsBarTexture";
+gsNameplates.fontPath = "Interface\\Addons\\gsNameplates\\media\\LiberationSans-Regular.ttf";
+gsNameplates.fontSize = 10;
+gsNameplates.nameFontSize = 12;
 
 function printTable(table)
 	if type(table) == "table" then
@@ -66,7 +67,7 @@ function gsNameplates:applyHealthbarClassColor(frame)
 end
 
 function gsNameplates:applyHealthbarTexture(frame)
-	frame.healthBar:SetStatusBarTexture(barTexturePath);
+	frame.healthBar:SetStatusBarTexture(gsNameplates.barTexturePath);
 end
 
 function gsNameplates:updateHealthText(frame)
@@ -82,7 +83,7 @@ function gsNameplates:updateHealthText(frame)
 			frame.health:SetPoint("CENTER", frame.healthBar)
 			frame.health.text:SetVertexColor(1, 1, 1)
 		end
-		frame.health.text:SetFont(fontPath, fontSize, "OUTLINE")
+		frame.health.text:SetFont(gsNameplates.fontPath, gsNameplates.fontSize, "OUTLINE")
 		frame.health.text:SetText(formatNumbers(UnitHealth(frame.unit)) .. " (" .. healthPercentage .. "%)")
 		frame.health.text:Show()
 	end
@@ -91,7 +92,7 @@ end
 function gsNameplates:updatePowerbarText(frame)
 	local powerPercentage = ceil((UnitPower("player") / UnitPowerMax("player") * 100)) -- Calculating a percentage value for primary resource (Rage/Mana/Focus/etc.)
 
-	frame:SetStatusBarTexture(barTexturePath)
+	frame:SetStatusBarTexture(gsNameplates.barTexturePath)
 	if not frame.powerNumbers then
 		frame.powerNumbers = CreateFrame("Frame", nil, frame) -- Setting up resource display frame.
 		frame.powerNumbers:SetSize(170,16)
@@ -99,7 +100,7 @@ function gsNameplates:updatePowerbarText(frame)
 		frame.powerNumbers.text:SetAllPoints(true)
 		frame.powerNumbers:SetFrameStrata("HIGH")
 		frame.powerNumbers:SetPoint("CENTER", frame)
-		frame.powerNumbers.text:SetFont(fontPath, fontSize, "OUTLINE")
+		frame.powerNumbers.text:SetFont(gsNameplates.fontPath, gsNameplates.fontSize, "OUTLINE")
 		frame.powerNumbers.text:SetVertexColor(1, 1, 1)
 	else
 		if InterfaceOptionsNamesPanelUnitNameplatesMakeLarger:GetValue() == "1" then -- If 'Larger Nameplates' option is enabled.
@@ -112,8 +113,42 @@ function gsNameplates:updatePowerbarText(frame)
 end
 
 function gsNameplates:applyCastbarStyle(frame)
-	frame.castBar.Text:SetFont(fontPath, fontSize, "OUTLINE");
-	frame.castBar:SetStatusBarTexture(barTexturePath);
+	frame.castBar.Text:SetFont(gsNameplates.fontPath, gsNameplates.fontSize, "OUTLINE");
+	frame.castBar:SetStatusBarTexture(gsNameplates.barTexturePath);
+end
+
+function gsNameplates:updateNameText(frame)
+	if not UnitIsPlayer(frame.unit) and not string.match(frame.unit, "raid*%a%d+") and not string.match(frame.unit, "party*%a%d+") then
+		local level = UnitLevel(frame.unit) or "";
+		if level == -1 then
+			level = "??";
+		end
+		local name = GetUnitName(frame.unit) or "";
+		frame.name:SetText("["..level.."] "..name);
+	end
+	frame.name:SetFont(gsNameplates.fontPath, gsNameplates.nameFontSize, "OUTLINE");
+end
+
+function gsNameplates:setNameplateFrameVisibility(frame)
+	--printTable(frame)
+	local threatStatus = UnitThreatSituation("player", frame.unit);
+	local nameplate = C_NamePlate.GetNamePlateForUnit(frame.unit);
+	if nameplate == C_NamePlate.GetNamePlateForUnit("player") or nameplate == C_NamePlate.GetNamePlateForUnit("target") then
+		frame:SetAlpha(1);
+		frame:SetScale(1);
+	elseif UnitIsPlayer(frame.unit) then
+		frame:SetAlpha(0.50);
+		frame:SetScale(1);
+	elseif threatStatus then
+		frame:SetAlpha(1);
+		frame:SetScale(1);
+		local r, g, b = GetThreatStatusColor(threatStatus); -- I'm not sure this even works
+		print(r,g,b)
+		frame.healthBar:SetStatusBarColor(r, g, b);
+	else
+		frame:SetAlpha(0.50)
+		frame:SetScale(0.75)
+	end
 end
 
 hooksecurefunc("CompactUnitFrame_UpdateHealth", function(frame)
@@ -121,7 +156,7 @@ hooksecurefunc("CompactUnitFrame_UpdateHealth", function(frame)
 end)
 
 hooksecurefunc("CompactUnitFrame_UpdateName", function(frame)
-
+	gsNameplates:updateNameText(frame);
 end)
 
 hooksecurefunc("ClassNameplateManaBar_OnUpdate", function(frame)
@@ -131,9 +166,11 @@ end)
 
 --Set bar texture for primary player unitframe
 hooksecurefunc("PlayerFrame_ToPlayerArt", function(frame)
+	frame.healthbar:SetStatusBarTexture(gsNameplates.barTexturePath);
 end)
 
 hooksecurefunc("TargetFrame_OnUpdate", function(frame)
+	frame.healthbar:SetStatusBarTexture(gsNameplates.barTexturePath);
 end)
 
 
@@ -166,7 +203,9 @@ function events:ADDON_LOADED(addonName)
 end
 
 function events:PLAYER_TARGET_CHANGED()
-
+	for _, nameplate in pairs(C_NamePlate.GetNamePlates()) do
+		gsNameplates:setNameplateFrameVisibility(nameplate.UnitFrame);
+	end
 end
 
 function events:NAME_PLATE_UNIT_ADDED(unitId)
@@ -175,9 +214,28 @@ function events:NAME_PLATE_UNIT_ADDED(unitId)
 		gsNameplates:updateHealthText(nameplate.UnitFrame);
 		gsNameplates:applyCastbarStyle(nameplate.UnitFrame);
 		if nameplate == C_NamePlate.GetNamePlateForUnit("player") then
-			printTable(nameplate)
 			gsNameplates:applyHealthbarClassColor(nameplate.UnitFrame);
 		end
+		gsNameplates:setNameplateFrameVisibility(nameplate.UnitFrame);
+end
+
+function events:PLAYER_REGEN_DISABLED()
+	for _, nameplate in pairs(C_NamePlate.GetNamePlates()) do
+		gsNameplates:setNameplateFrameVisibility(nameplate.UnitFrame);
+	end
+end
+
+function events:PLAYER_REGEN_ENABLED()
+	for _, nameplate in pairs(C_NamePlate.GetNamePlates()) do
+		gsNameplates:setNameplateFrameVisibility(nameplate.UnitFrame);
+	end
+end
+
+function events:UNIT_THREAT_LIST_UPDATE(unitId)
+	if unitId ~= "player" then
+		local nameplate = C_NamePlate.GetNamePlateForUnit(unitId);
+		gsNameplates:setNameplateFrameVisibility(nameplate.UnitFrame);
+	end
 end
 -- ................................................................
   -- must be last line:
