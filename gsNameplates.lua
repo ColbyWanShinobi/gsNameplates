@@ -151,8 +151,7 @@ local function formatNumbers(amount)
 	return formatted;
 end
 
---Health Text
-hooksecurefunc("CompactUnitFrame_UpdateHealth", function(frame)
+function gsNameplates:updateHealthText(frame)
 	if frame.optionTable.colorNameBySelection and not frame:IsForbidden() then
 		local healthPercentage = ceil((UnitHealth(frame.displayedUnit) / UnitHealthMax(frame.displayedUnit) * 100));
 
@@ -171,16 +170,19 @@ hooksecurefunc("CompactUnitFrame_UpdateHealth", function(frame)
 		frame.health.text:SetText(formatNumbers(UnitHealth(frame.unit)) .. " (" .. healthPercentage .. "%)")
 		frame.health.text:Show()
 	end
+end
+
+--Health Text
+hooksecurefunc("CompactUnitFrame_UpdateHealth", function(frame)
+	gsNameplates:updateHealthText(frame)
 end)
 
 hooksecurefunc("CompactUnitFrame_UpdateName", function(frame)
 	if frame.name then
-		if not string.match(frame.unit, "raid%d+") then 
+		if not UnitIsPlayer(frame.unit) and not string.match(frame.unit, "raid*%a%d+") and not string.match(frame.unit, "party*%a%d+") then
 			local level = UnitLevel(frame.unit) or "";
 			if level == -1 then
-				local playerLevel = UnitLevel("player");
-				local bossLevel = playerLevel + 3;
-				level = bossLevel;
+				level = "??";
 			end
 			--local difficultyColor = GetQuestDifficultyColor(level);
 			local name = GetUnitName(frame.unit) or "";
@@ -334,9 +336,11 @@ function events:NAME_PLATE_UNIT_ADDED(unitId)
 	if nameplate == C_NamePlate.GetNamePlateForUnit("player") then
 		--Set PRD healthbar to my class color
 		gsNameplates.setHealthbarClassColor(nameplate);
+		gsNameplates:updateHealthText(nameplate.UnitFrame)
 	end
 	gsNameplates.setNameplateAlpha(nameplate);
 	gsNameplates.setCastBarStyle(nameplate);
+	
 end
 -- ................................................................
   -- must be last line:
