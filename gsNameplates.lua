@@ -173,22 +173,20 @@ hooksecurefunc("CompactUnitFrame_UpdateHealth", function(frame)
 	end
 end)
 
-hooksecurefunc("CompactUnitFrame_UpdateName", function(frame)
+function gsNameplates:updateName(frame)
 	if frame.name then
-		if not string.match(frame.unit, "raid%d+") then 
+		--if not string.match(frame.unit, "raid%d+") then 
+		if not UnitIsPlayer(frame.unit) and not string.match(frame.unit, "raid*%a%d+") and not string.match(frame.unit, "party*%a%d+")then
 			local level = UnitLevel(frame.unit) or "";
 			if level == -1 then
-				local playerLevel = UnitLevel("player");
-				local bossLevel = playerLevel + 3;
-				level = bossLevel;
+				level = "??";
 			end
-			--local difficultyColor = GetQuestDifficultyColor(level);
 			local name = GetUnitName(frame.unit) or "";
 			frame.name:SetText("["..level.."] "..name);
 		end
-		frame.name:SetFont("Interface\\Addons\\gsNameplates\\media\\LiberationSans-Regular.ttf", 12, "OUTLINE");
+		frame.name:SetFont(fontPath, 12, "OUTLINE");
 	end
-end)
+end
 
 hooksecurefunc("ClassNameplateManaBar_OnUpdate", function(frame)
 	local powerPercentage = ceil((UnitPower("player") / UnitPowerMax("player") * 100)) -- Calculating a percentage value for primary resource (Rage/Mana/Focus/etc.)
