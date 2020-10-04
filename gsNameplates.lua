@@ -6,118 +6,25 @@ web: gameshaman.com
 repo: https://github.com/ColbyWanShinobi/gsNameplates.git
 --]]
 
--- Makes Personal Resource Display click-through.
--- C_NamePlate.SetNamePlateSelfClickThrough(true)
-
 local gsNameplates = CreateFrame("Frame");
 local events = {};
 
+local barTexturePath = "Interface\\Addons\\gsNameplates\\media\\gsBarTexture";
+local fontPath = "Interface\\Addons\\gsNameplates\\media\\LiberationSans-Regular.ttf";
+local fontSize = 10;
+
 function printTable(table)
-	for objIndex, objInfo in ipairs(table) do
-    print("["..objIndex.."]");
-  end
-end
-
-
-function loadOptionPanel()
-	local gsNP_Options = CreateFrame("frame", "gsNameplates_Options");
-	gsNP_Options.name = "gsNameplates";
-	InterfaceOptions_AddCategory(gsNP_Options);
-
-	StaticPopupDialogs["GSNAMEPLATESCONFIRMRELOAD"] = {
-		text = "Changing this option requires a UI reload. Reload now?",
-		button1 = YES,
-		button2 = NO,
-		OnAccept = function()
-			ReloadUI();
-		end,
-		timeout = 0,
-		whileDead = true,
-		hideOnEscape = true,
-	}
-
-	local gsNP_Title = gsNP_Options:CreateFontString("Title", "ARTWORK", "GameFontNormalLarge");
-	gsNP_Title:SetPoint("TOPLEFT", 16, -16);
-	gsNP_Title:SetText("gsNameplates");
-
-	local prdClickThroughCheckbox = CreateFrame("CheckButton", "prdClickThroughCheckbox", gsNP_Options, "ChatConfigCheckButtonTemplate");
-	prdClickThroughCheckbox:SetPoint("TOPLEFT", 15, -40);
-	prdClickThroughCheckbox:SetWidth(30);
-	prdClickThroughCheckbox:SetHeight(30);
-	_G[prdClickThroughCheckbox:GetName().."Text"]:SetText("Enable PRD Click Through");
-	prdClickThroughCheckbox.tooltip = "Allows mouse clicks to pass through the PRD (health/mana bars near the center of your screen)";
-	prdClickThroughCheckbox:SetChecked(gsNameplatesConfig.prdClickThrough);
-	prdClickThroughCheckbox:SetScript("OnClick", function()
-		gsNameplatesConfig.prdClickThrough = prdClickThroughCheckbox:GetChecked();
-		C_NamePlate.SetNamePlateSelfClickThrough(gsNameplatesConfig.prdClickThrough);
-		print("[gsNP] PRD Clickthtough set to ", C_NamePlate.GetNamePlateSelfClickThrough());
-	end)
-	
-	prdNameplateMaxDistance = CreateFrame("Slider", "prdNameplateMaxDistance", gsNP_Options, "OptionsSliderTemplate")
-	prdNameplateMaxDistance:ClearAllPoints()
-	prdNameplateMaxDistance:SetPoint("TOPLEFT", 15, -100)
-	prdNameplateMaxDistance:SetMinMaxValues(5, 60)
-	prdNameplateMaxDistance:SetValue(gsNameplatesConfig.prdNameplateMaxDistance)
-	prdNameplateMaxDistance:SetValueStep(5)
-	prdNameplateMaxDistance:SetObeyStepOnDrag(true)
-	prdNameplateMaxDistance:SetOrientation("HORIZONTAL")
-	_G[prdNameplateMaxDistance:GetName() .. "Low"]:SetText("5")
-	_G[prdNameplateMaxDistance:GetName() .. "High"]:SetText("60")
-	_G[prdNameplateMaxDistance:GetName() .. "Text"]:SetText("Nameplate Max Distance")
-	prdNameplateMaxDistance:SetScript("OnValueChanged", function() 
-		gsNameplatesConfig.prdNameplateMaxDistance = prdNameplateMaxDistance:GetValue()
-		SetCVar('nameplateMaxDistance', gsNameplatesConfig.prdNameplateMaxDistance)
-		prdNameplateMaxDistanceLabel:SetText("Distance: " .. prdNameplateMaxDistance:GetValue())
-	end)
-
-	local prdNameplateMaxDistanceLabel = gsNP_Options:CreateFontString("prdNameplateMaxDistanceLabel", "ARTWORK", "GameFontHighlightSmall")
-	prdNameplateMaxDistanceLabel:SetPoint("LEFT", prdNameplateMaxDistance, "RIGHT", 20, 0)
-	prdNameplateMaxDistanceLabel:SetText("Distance: " .. gsNameplatesConfig.prdNameplateMaxDistance)
-	
-
-
-  ---------------------------------------
-  
-  --[[local numericDisplaySelfLabel = INP_Options:CreateFontString("numericDisplaySelfLabel", "ARTWORK", "GameFontHighlightSmall")
-	numericDisplaySelfLabel:SetPoint("TOPLEFT", 15, -150)
-	numericDisplaySelfLabel:SetText("Numeric Display (Self)")
-
-	local numericDisplaySelfDropdown = CreateFrame("Frame", "numericDisplaySelfDropdown", INP_Options, "UIDropDownMenuTemplate")
-	numericDisplaySelfDropdown:SetPoint("TOPLEFT", 0, -163)
-	numericDisplaySelfDropdown.initialize = function(dropdown)
-		local sortMode = { "Numeric Value", "Current", "Percentage", "Both", "Hide" }
-		for i, mode in next, sortMode do
-			local info = UIDropDownMenu_CreateInfo()
-			info.text = sortMode[i]
-			info.value = sortMode[i]
-			info.func = function(self)
-				ImprovedNameplatesDB.numbersDisplaySelf = self.value
-				UIDropDownMenu_SetSelectedValue(dropdown, self.value)
+	if type(table) == "table" then
+		for k, v in pairs(table) do
+			local value = v;
+			if type(v) ~= "string" then
+				value = type(v);
 			end
-			UIDropDownMenu_AddButton(info)
+			print("["..k.."]".."["..value.."]");
 		end
-		UIDropDownMenu_SetSelectedValue(dropdown, ImprovedNameplatesDB.numbersDisplaySelf)
+	else
+		print("NOT A TABLE");
 	end
-	numericDisplaySelfDropdown:HookScript("OnShow", numericDisplaySelfDropdown.initialize)
-	UIDropDownMenu_SetText(numericDisplaySelfDropdown, ImprovedNameplatesDB.numbersDisplaySelf)
-  ]]
-
-	--[[local nameFontSmallSlider = CreateFrame("Slider", "nameFontSmallSlider", INP_Options, "OptionsSliderTemplate")
-	nameFontSmallSlider:ClearAllPoints()
-	nameFontSmallSlider:SetPoint("TOPLEFT", 15, -275)
-	nameFontSmallSlider:SetMinMaxValues(5, 20)
-	nameFontSmallSlider:SetValue(ImprovedNameplatesDB.nameFontSmall)
-	nameFontSmallSlider:SetValueStep(1)
-	nameFontSmallSlider:SetObeyStepOnDrag(true)
-	nameFontSmallSlider:SetOrientation("HORIZONTAL")
-	_G[nameFontSmallSlider:GetName() .. "Low"]:SetText("5")
-	_G[nameFontSmallSlider:GetName() .. "High"]:SetText("20")
-	_G[nameFontSmallSlider:GetName() .. "Text"]:SetText("Name Font Size (Small)")
-	nameFontSmallSlider:SetScript("OnValueChanged", function() ImprovedNameplatesDB.nameFontSmall = nameFontSmallSlider:GetValue() nameFontSmallLabel:SetText("Selected: " .. nameFontSmallSlider:GetValue()) end)
-
-	local nameFontSmallLabel = INP_Options:CreateFontString("nameFontSmallLabel", "ARTWORK", "GameFontHighlightSmall")
-	nameFontSmallLabel:SetPoint("LEFT", nameFontSmallSlider, "RIGHT", 20, 0)
-	nameFontSmallLabel:SetText("Selected: " .. ImprovedNameplatesDB.nameFontSmall)]]
 end
 
 local function round(number, decimals)
@@ -136,7 +43,6 @@ local function add_commas(amount)
   return formatted
 end
 
-
 local function formatNumbers(amount)
 	local formatted = amount;
 	if amount >= 10000 and amount <= 1000000 then
@@ -149,6 +55,18 @@ local function formatNumbers(amount)
 		formatted = add_commas(amount) 
 	end
 	return formatted;
+end
+
+function gsNameplates:applyHealthbarClassColor(frame)
+	local r, g, b;
+	local localizedClass, englishClass = UnitClass(frame.unit);
+	local classColor = RAID_CLASS_COLORS[englishClass];
+	r, g, b = classColor.r, classColor.g, classColor.b;
+	frame.healthBar:SetStatusBarColor(r, g, b);
+end
+
+function gsNameplates:applyHealthbarTexture(frame)
+	frame.healthBar:SetStatusBarTexture(barTexturePath);
 end
 
 function gsNameplates:updateHealthText(frame)
@@ -164,38 +82,16 @@ function gsNameplates:updateHealthText(frame)
 			frame.health:SetPoint("CENTER", frame.healthBar)
 			frame.health.text:SetVertexColor(1, 1, 1)
 		end
-
-		--frame.health.text:SetFont("FONTS\\ARIALN.TTF", 10, "OUTLINE")
-		frame.health.text:SetFont("Interface\\Addons\\gsNameplates\\media\\LiberationSans-Regular.ttf", 10, "OUTLINE")
+		frame.health.text:SetFont(fontPath, fontSize, "OUTLINE")
 		frame.health.text:SetText(formatNumbers(UnitHealth(frame.unit)) .. " (" .. healthPercentage .. "%)")
 		frame.health.text:Show()
 	end
 end
 
---Health Text
-hooksecurefunc("CompactUnitFrame_UpdateHealth", function(frame)
-	gsNameplates:updateHealthText(frame)
-end)
-
-hooksecurefunc("CompactUnitFrame_UpdateName", function(frame)
-	if frame.name then
-		if not UnitIsPlayer(frame.unit) and not string.match(frame.unit, "raid*%a%d+") and not string.match(frame.unit, "party*%a%d+") then
-			local level = UnitLevel(frame.unit) or "";
-			if level == -1 then
-				level = "??";
-			end
-			--local difficultyColor = GetQuestDifficultyColor(level);
-			local name = GetUnitName(frame.unit) or "";
-			frame.name:SetText("["..level.."] "..name);
-		end
-		frame.name:SetFont("Interface\\Addons\\gsNameplates\\media\\LiberationSans-Regular.ttf", 12, "OUTLINE");
-	end
-end)
-
-hooksecurefunc("ClassNameplateManaBar_OnUpdate", function(frame)
+function gsNameplates:updatePowerbarText(frame)
 	local powerPercentage = ceil((UnitPower("player") / UnitPowerMax("player") * 100)) -- Calculating a percentage value for primary resource (Rage/Mana/Focus/etc.)
 
-	frame:SetStatusBarTexture("Interface\\Addons\\gsNameplates\\media\\gsBarTexture")
+	frame:SetStatusBarTexture(barTexturePath)
 	if not frame.powerNumbers then
 		frame.powerNumbers = CreateFrame("Frame", nil, frame) -- Setting up resource display frame.
 		frame.powerNumbers:SetSize(170,16)
@@ -203,7 +99,7 @@ hooksecurefunc("ClassNameplateManaBar_OnUpdate", function(frame)
 		frame.powerNumbers.text:SetAllPoints(true)
 		frame.powerNumbers:SetFrameStrata("HIGH")
 		frame.powerNumbers:SetPoint("CENTER", frame)
-		frame.powerNumbers.text:SetFont("Interface\\Addons\\gsNameplates\\media\\LiberationSans-Regular.ttf", 10, "OUTLINE")
+		frame.powerNumbers.text:SetFont(fontPath, fontSize, "OUTLINE")
 		frame.powerNumbers.text:SetVertexColor(1, 1, 1)
 	else
 		if InterfaceOptionsNamesPanelUnitNameplatesMakeLarger:GetValue() == "1" then -- If 'Larger Nameplates' option is enabled.
@@ -213,74 +109,35 @@ hooksecurefunc("ClassNameplateManaBar_OnUpdate", function(frame)
 			frame.powerNumbers.text:Hide() -- Not enough space on regular-sized nameplates to have text on resource bar alongside health bar text, so we disable that.
 		end
 	end
+end
+
+function gsNameplates:applyCastbarStyle(frame)
+	frame.castBar.Text:SetFont(fontPath, fontSize, "OUTLINE");
+	frame.castBar:SetStatusBarTexture(barTexturePath);
+end
+
+hooksecurefunc("CompactUnitFrame_UpdateHealth", function(frame)
+	gsNameplates:updateHealthText(frame);
+end)
+
+hooksecurefunc("CompactUnitFrame_UpdateName", function(frame)
+
+end)
+
+hooksecurefunc("ClassNameplateManaBar_OnUpdate", function(frame)
+	gsNameplates:updatePowerbarText(frame);
+
 end)
 
 --Set bar texture for primary player unitframe
 hooksecurefunc("PlayerFrame_ToPlayerArt", function(frame)
-	frame.healthbar:SetStatusBarTexture("Interface\\Addons\\gsNameplates\\media\\gsBarTexture")
 end)
 
 hooksecurefunc("TargetFrame_OnUpdate", function(frame)
-	frame.healthbar:SetStatusBarTexture("Interface\\Addons\\gsNameplates\\media\\gsBarTexture")
 end)
 
-function gsNameplates.setCastBarStyle(nameplate)
-	if nameplate then
-		nameplate.UnitFrame.castBar.Text:SetFont("Interface\\Addons\\gsNameplates\\media\\LiberationSans-Regular.ttf", 10, "OUTLINE");
-		nameplate.UnitFrame.castBar:SetStatusBarTexture("Interface\\Addons\\gsNameplates\\media\\gsBarTexture")
-	end
-end
 
-function gsNameplates.setHealthbarClassColor(nameplate)
-	local r, g, b;
-	local localizedClass, englishClass = UnitClass(nameplate.UnitFrame.unit);
-	local classColor = RAID_CLASS_COLORS[englishClass];
-	r, g, b = classColor.r, classColor.g, classColor.b;
-	nameplate.UnitFrame.healthBar:SetStatusBarColor(r, g, b);
-end
 
-function gsNameplates.setHealthBarTexture(nameplate)
-	nameplate.UnitFrame.healthBar:SetStatusBarTexture("Interface\\Addons\\gsNameplates\\media\\gsBarTexture")
-end
-
-function gsNameplates:printTable(table)
-	print("------")
-	for k,v in pairs(table) do
-		print("--")
-		print(k,v, "[Type: "..type(v).."]")
-		print("--")
-	end
-	print("------")
-end
-
-function gsNameplates.setNameplateAlpha(nameplate)
-	if nameplate then
-		--if frame == C_NamePlate.GetNamePlateForUnit("target") or not UnitExists("target") or frame == C_NamePlate.GetNamePlateForUnit("player") then
-		local playerHasAggro = UnitThreatSituation("player", nameplate.UnitFrame.unit);
-		if UnitAffectingCombat(nameplate.UnitFrame.unit) and UnitCanAttack("player", nameplate.UnitFrame.unit) and playerHasAggro then 
-			--Unit is in combat, the player can attack it, and it has aggro on the player
-			nameplate.UnitFrame:SetAlpha(1)
-			nameplate.UnitFrame:SetScale(1)
-		elseif UnitAffectingCombat(nameplate.UnitFrame.unit) and UnitCanAttack("player", nameplate.UnitFrame.unit) and not playerHasAggro then
-			--Unit is in combat, the player can attack it, but player has no aggro
-			nameplate.UnitFrame:SetAlpha(0.50)
-			nameplate.UnitFrame:SetScale(0.95)
-		elseif nameplate == C_NamePlate.GetNamePlateForUnit("target") then
-			nameplate.UnitFrame:SetAlpha(1)
-			nameplate.UnitFrame:SetScale(1)
-		elseif nameplate == C_NamePlate.GetNamePlateForUnit("player") then
-			--Don't dim the PRD
-			nameplate.UnitFrame:SetAlpha(1)
-			nameplate.UnitFrame:SetScale(1)
-		elseif UnitIsPlayer(nameplate.UnitFrame.unit) then
-			nameplate.UnitFrame:SetAlpha(0.50)
-			nameplate.UnitFrame:SetScale(1)
-		else
-			nameplate.UnitFrame:SetAlpha(0.35)
-			nameplate.UnitFrame:SetScale(0.95)
-		end
-	end
-end
 
 -- *****************************************************************
 -- *****************************************************************
@@ -300,47 +157,27 @@ end
 
 function events:ADDON_LOADED(addonName)
   if (addonName == "gsNameplates") then
-    print("gsNameplates [gsNP] by gameshaman.com - Addon Loaded");
-    --if gsNameplatesConfig == nil then
-			--print("Initializing gsNameplates...");
-			--gsNameplates:initializeSaveFile()
-			local prdCT = C_NamePlate.GetNamePlateSelfClickThrough() or true;
-			local prdAlways = GetCVar("nameplatePersonalShowAlways") or true;
-			local prdNPMaxDist = GetCVar("nameplateMaxDistance") or 40;
-			gsNameplatesConfig = {
-				prdClickThrough = prdCT,
-				prdAlwaysShow = prdAlways,
-				prdNameplateMaxDistance = prdNPMaxDist,
-			}
-		--end
-
-		--Set CVAR values on load from saved preferences
-		C_NamePlate.SetNamePlateSelfClickThrough(gsNameplatesConfig.prdClickThrough);
-		SetCVar('nameplateMaxDistance', gsNameplatesConfig.prdNameplateMaxDistance)
-		--defaults
-		--print(GetCVar('nameplateMaxDistance'),GetCVar('nameplateTargetBehindMaxDistance'))
-		--SetCVar('nameplateTargetBehindMaxDistance', 20)
-		loadOptionPanel();
+		print("gsNameplates [gsNP] by gameshaman.com - Addon Loaded");
+		C_NamePlate.SetNamePlateSelfClickThrough(true);
+		SetCVar('nameplatePersonalShowAlways', true)
+		SetCVar('nameplateMaxDistance', 40)
+		SetCVar('nameplateTargetBehindMaxDistance', 20)
   end
 end
 
 function events:PLAYER_TARGET_CHANGED()
-	for _, nameplate in pairs(C_NamePlate.GetNamePlates()) do
-		gsNameplates.setNameplateAlpha(nameplate);
-	end
+
 end
 
 function events:NAME_PLATE_UNIT_ADDED(unitId)
-	local nameplate = C_NamePlate.GetNamePlateForUnit(unitId);
-	gsNameplates.setHealthBarTexture(nameplate)
-	if nameplate == C_NamePlate.GetNamePlateForUnit("player") then
-		--Set PRD healthbar to my class color
-		gsNameplates.setHealthbarClassColor(nameplate);
-		gsNameplates:updateHealthText(nameplate.UnitFrame)
-	end
-	gsNameplates.setNameplateAlpha(nameplate);
-	gsNameplates.setCastBarStyle(nameplate);
-	
+		local nameplate = C_NamePlate.GetNamePlateForUnit(unitId);
+		gsNameplates:applyHealthbarTexture(nameplate.UnitFrame);
+		gsNameplates:updateHealthText(nameplate.UnitFrame);
+		gsNameplates:applyCastbarStyle(nameplate.UnitFrame);
+		if nameplate == C_NamePlate.GetNamePlateForUnit("player") then
+			printTable(nameplate)
+			gsNameplates:applyHealthbarClassColor(nameplate.UnitFrame);
+		end
 end
 -- ................................................................
   -- must be last line:
