@@ -13,6 +13,12 @@ gsNameplates.barTexturePath = "Interface\\Addons\\gsNameplates\\media\\gsBarText
 gsNameplates.fontPath = "Interface\\Addons\\gsNameplates\\media\\LiberationSans-Regular.ttf";
 gsNameplates.fontSize = 10;
 gsNameplates.nameFontSize = 12;
+gsNameplates.defaultNameplateScale = 1;
+gsNameplates.defaultNameplateAlpha = 1;
+gsNameplates.pvpNameplateScale = 1;
+gsNameplates.pvpNameplateAlpha = 0.5;
+gsNameplates.worldNameplateScale = 0.75;
+gsNameplates.worldNameplateAlpha = 0.40;
 
 function printTable(table)
 	if type(table) == "table" then
@@ -129,25 +135,35 @@ function gsNameplates:updateNameText(frame)
 	frame.name:SetFont(gsNameplates.fontPath, gsNameplates.nameFontSize, "OUTLINE");
 end
 
+function gsNameplates:setVisibility(frame, frameAlpha, frameScale)
+	frame:SetAlpha(frameAlpha);
+	frame:SetScale(frameScale);
+end
+
 function gsNameplates:setNameplateFrameVisibility(frame)
-	--printTable(frame)
 	local threatStatus = UnitThreatSituation("player", frame.unit);
 	local nameplate = C_NamePlate.GetNamePlateForUnit(frame.unit);
-	if nameplate == C_NamePlate.GetNamePlateForUnit("player") or nameplate == C_NamePlate.GetNamePlateForUnit("target") then
-		frame:SetAlpha(1);
-		frame:SetScale(1);
-	elseif UnitIsPlayer(frame.unit) then
-		frame:SetAlpha(0.50);
-		frame:SetScale(1);
-	elseif threatStatus then
-		frame:SetAlpha(1);
-		frame:SetScale(1);
-		local r, g, b = GetThreatStatusColor(threatStatus); -- I'm not sure this even works
-		print(r,g,b)
-		frame.healthBar:SetStatusBarColor(r, g, b);
-	else
-		frame:SetAlpha(0.50)
-		frame:SetScale(0.75)
+	--local inRange = CheckInteractDistance(frame.unit, 4); --this is a hack because Blizz fubared range detection on nomeplates - https://wow.gamepedia.com/API_CheckInteractDistance
+	local playerNameplate = C_NamePlate.GetNamePlateForUnit("player");
+	local targetNameplate = C_NamePlate.GetNamePlateForUnit("target");
+	local mobName = GetUnitName(frame.unit) or "";
+
+	if nameplate ~= playerNameplate then --never modify the player nameplate/PRD
+		if UnitIsPlayer(frame.unit) then --is it another player?
+			gsNameplates:setVisibility(frame, gsNameplates.pvpNameplateAlpha, gsNameplates.pvpNameplateScale);
+		elseif nameplate == targetNameplate or threatStatus ~= nil then
+			--if target or any mob we have threat status with, then full size frame
+			gsNameplates:setVisibility(frame, gsNameplates.defaultNameplateAlpha, gsNameplates.defaultNameplateScale);
+			--if we have any non nil threat status, then set the color accordingly, otherwise ignore color
+			if threatStatus ~= nil then
+				local r, g, b = GetThreatStatusColor(threatStatus);
+				frame.healthBar:SetStatusBarColor(r, g, b);
+			end
+		--elseif not inRange then
+			--gsNameplates:setVisibility(frame, gsNameplates.hiddenNameplateAlpha, gsNameplates.hiddenNameplateScale);
+		else
+			gsNameplates:setVisibility(frame, gsNameplates.worldNameplateAlpha, gsNameplates.worldNameplateScale);
+		end
 	end
 end
 
@@ -179,7 +195,7 @@ end)
 -- *****************************************************************
 -- *****************************************************************
 function gsNameplates:init()
-  self:SetScript("OnEvent", function(frame, event, ...)
+	self:SetScript("OnEvent", function(frame, event, ...)
     local handler = events[event];
     if handler then
       -- dispatch events that were auto-registered by naming convention
@@ -214,6 +230,7 @@ function events:NAME_PLATE_UNIT_ADDED(unitId)
 		gsNameplates:updateHealthText(nameplate.UnitFrame);
 		gsNameplates:applyCastbarStyle(nameplate.UnitFrame);
 		if nameplate == C_NamePlate.GetNamePlateForUnit("player") then
+			gsNameplates:updateHealthText(nameplate.UnitFrame); -- apply the health text again to the PRD because sometimes it doesn't work the first time
 			gsNameplates:applyHealthbarClassColor(nameplate.UnitFrame);
 		end
 		gsNameplates:setNameplateFrameVisibility(nameplate.UnitFrame);
@@ -234,7 +251,9 @@ end
 function events:UNIT_THREAT_LIST_UPDATE(unitId)
 	if unitId ~= "player" then
 		local nameplate = C_NamePlate.GetNamePlateForUnit(unitId);
-		gsNameplates:setNameplateFrameVisibility(nameplate.UnitFrame);
+		if nameplate then
+			gsNameplates:setNameplateFrameVisibility(nameplate.UnitFrame);
+		end
 	end
 end
 -- ................................................................
