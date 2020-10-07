@@ -148,7 +148,9 @@ function gsNameplates:setNameplateFrameVisibility(frame)
 	local targetNameplate = C_NamePlate.GetNamePlateForUnit("target");
 	local mobName = GetUnitName(frame.unit) or "";
 
-	if nameplate ~= playerNameplate then --never modify the player nameplate/PRD
+	if nameplate == playerNameplate then --never modify the player nameplate/PRD
+		gsNameplates:setVisibility(frame, gsNameplates.defaultNameplateAlpha, gsNameplates.defaultNameplateScale);
+	else
 		if UnitIsPlayer(frame.unit) then --is it another player?
 			gsNameplates:setVisibility(frame, gsNameplates.pvpNameplateAlpha, gsNameplates.pvpNameplateScale);
 		elseif nameplate == targetNameplate or threatStatus ~= nil then
