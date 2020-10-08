@@ -24,7 +24,7 @@ function printTable(table)
 	if type(table) == "table" then
 		for k, v in pairs(table) do
 			local value = v;
-			if type(v) ~= "string" then
+			if type(v) ~= "string" or type(v) ~= "number" then
 				value = type(v);
 			end
 			print("["..k.."]".."["..value.."]");
@@ -158,8 +158,17 @@ function gsNameplates:setNameplateFrameVisibility(frame)
 			gsNameplates:setVisibility(frame, gsNameplates.defaultNameplateAlpha, gsNameplates.defaultNameplateScale);
 			--if we have any non nil threat status, then set the color accordingly, otherwise ignore color
 			if threatStatus ~= nil then
-				local r, g, b = GetThreatStatusColor(threatStatus);
-				frame.healthBar:SetStatusBarColor(r, g, b);
+				if threatStatus == 0 then
+					frame.healthBar:SetStatusBarColor(1, 0.20, 0.80); -- purple - lost aggro
+				elseif threatStatus == 1 then
+					local r, g, b = { 1, 1, 0.47 }; -- light yellow - gaining aggro
+				elseif threatStatus == 2 then
+					frame.healthBar:SetStatusBarColor(1, 0.6, 0); -- orange - losing aggro
+				else
+					frame.healthBar:SetStatusBarColor(1, 0, 0); -- solid aggro
+				end
+				--local r, g, b = GetCustomThreatStatusColor(threatStatus);
+				--frame.healthBar:SetStatusBarColor(r, g, b);
 			end
 		--elseif not inRange then
 			--gsNameplates:setVisibility(frame, gsNameplates.hiddenNameplateAlpha, gsNameplates.hiddenNameplateScale);
@@ -228,14 +237,22 @@ end
 
 function events:NAME_PLATE_UNIT_ADDED(unitId)
 		local nameplate = C_NamePlate.GetNamePlateForUnit(unitId);
+		if nameplate == C_NamePlate.GetNamePlateForUnit("player") then
+			gsNameplates:applyHealthbarClassColor(nameplate.UnitFrame);
+		end
 		gsNameplates:applyHealthbarTexture(nameplate.UnitFrame);
 		gsNameplates:updateHealthText(nameplate.UnitFrame);
 		gsNameplates:applyCastbarStyle(nameplate.UnitFrame);
-		if nameplate == C_NamePlate.GetNamePlateForUnit("player") then
-			gsNameplates:updateHealthText(nameplate.UnitFrame); -- apply the health text again to the PRD because sometimes it doesn't work the first time
-			gsNameplates:applyHealthbarClassColor(nameplate.UnitFrame);
-		end
 		gsNameplates:setNameplateFrameVisibility(nameplate.UnitFrame);
+end
+
+function events:UNIT_THREAT_LIST_UPDATE(unitId)
+	if unitId ~= "player" then
+		local nameplate = C_NamePlate.GetNamePlateForUnit(unitId);
+		if nameplate then
+			gsNameplates:setNameplateFrameVisibility(nameplate.UnitFrame);
+		end
+	end
 end
 
 function events:PLAYER_REGEN_DISABLED()
@@ -250,12 +267,9 @@ function events:PLAYER_REGEN_ENABLED()
 	end
 end
 
-function events:UNIT_THREAT_LIST_UPDATE(unitId)
-	if unitId ~= "player" then
-		local nameplate = C_NamePlate.GetNamePlateForUnit(unitId);
-		if nameplate then
-			gsNameplates:setNameplateFrameVisibility(nameplate.UnitFrame);
-		end
+function events:PLAYER_ENTERING_WORLD()
+	for _, nameplate in pairs(C_NamePlate.GetNamePlates()) do
+		gsNameplates:updateHealthText(nameplate.UnitFrame);
 	end
 end
 -- ................................................................
